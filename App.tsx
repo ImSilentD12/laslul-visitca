@@ -84,7 +84,7 @@ const App: React.FC = () => {
                    Ensure you have a file named 'rasul.jpg' in your public folder 
                 */}
                 <img 
-                    src="./rasul.jpg" 
+                    src="/rasul.jpg" 
                     alt="Rasul Abstract" 
                     className="absolute inset-0 w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
                 />
