@@ -3,6 +3,7 @@ import { ViewMode } from './types';
 import { BurrText } from './components/BurrText';
 import { ChatWidget } from './components/ChatWidget';
 import { MathChart } from './components/MathChart';
+import { RatingWidget } from './components/RatingWidget';
 import { ToggleLeft, ToggleRight, Sigma, Pi, Divide, FunctionSquare } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -207,9 +208,14 @@ const App: React.FC = () => {
             <ChatWidget mode={mode} />
         </div>
       </section>
+      
+      {/* Rating Section */}
+      <section className="bg-black py-12 px-4">
+        <RatingWidget mode={mode} />
+      </section>
 
       {/* Footer / Contact */}
-      <footer id="contact" className="bg-black pt-24 pb-12 px-4 border-t-4 border-white">
+      <footer id="contact" className="bg-zinc-950 pt-24 pb-12 px-4 border-t-4 border-white">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-end gap-12">
             <div>
                  <h2 className="text-4xl font-black mb-4">
