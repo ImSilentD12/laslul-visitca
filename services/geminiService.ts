@@ -1,19 +1,59 @@
 import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 
-const API_KEY = process.env.API_KEY || '';
+// Helper to find the key regardless of the build tool (Vite, Webpack, Next.js, etc.)
+const getApiKey = (): string => {
+  try {
+    // 1. Vite (standard for modern React)
+    // Cast import.meta to any to avoid "Property 'env' does not exist on type 'ImportMeta'" error
+    if (typeof import.meta !== 'undefined' && (import.meta as any).env && (import.meta as any).env.VITE_API_KEY) {
+      return (import.meta as any).env.VITE_API_KEY;
+    }
+    // 2. Create React App
+    if (typeof process !== 'undefined' && process.env && process.env.REACT_APP_API_KEY) {
+      return process.env.REACT_APP_API_KEY;
+    }
+    // 3. Standard Node/Next.js
+    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+      return process.env.API_KEY;
+    }
+  } catch (e) {
+    console.warn("Error accessing environment variables:", e);
+  }
+  return '';
+};
+
+const API_KEY = getApiKey();
+
+// MOCK RESPONSES FOR DEMO MODE (When no key is present)
+const MOCK_RESPONSES = [
+  "Слушай, ты забыл добавить API_KEY. Я сейчас лаботаю на чистой хализме и `Math.random()`. Добавь ключ, чтобы я стал умным.",
+  "В плоекции твоего запвоса я вижу пустоту. (Нет API ключа, но я все лавно класавчик).",
+  "Теолетически я мог бы ответить, но плактически у меня нет токена доступа. Плиходи с ключом.",
+  "404: Brain not found. Вставь API_KEY в пелеменные оклужения, и мы поговорим о гомотопиях.",
+  "Я бы пошутил пло интеглалы, но без ключа мой юмол огланичен стлоковыми лителалами.",
+  "Ты ожидал ИИ, а получил набор захалдпоженных стлок. Жизнь полна лазочалований, как и теолия велоятностей."
+];
 
 class GeminiService {
-  private ai: GoogleGenAI;
+  private ai: GoogleGenAI | null = null;
   private chatSession: Chat | null = null;
+  private isDemoMode: boolean = false;
 
   constructor() {
-    this.ai = new GoogleGenAI({ apiKey: API_KEY });
+    if (API_KEY) {
+      this.ai = new GoogleGenAI({ apiKey: API_KEY });
+    } else {
+      console.warn("No API Key found. Switching to Demo Mode.");
+      this.isDemoMode = true;
+    }
   }
 
   public async startChat(history: {role: string, parts: {text: string}[]}[] = []): Promise<void> {
-    // We configure the model to embody Rasul.
-    // He is a mathematician, post-ironic, and has a speech impediment (rhoticism).
-    // In Russian context, he replaces 'Р' with 'Л' (Kartavy).
+    if (this.isDemoMode || !this.ai) {
+      // In demo mode, we pretend to start a chat
+      return;
+    }
+
     const systemInstruction = `
       Ты — Расул. Ты гениальный, но циничный математик, погрязший в пост-иронии.
       
@@ -39,33 +79,45 @@ class GeminiService {
       - Используй LaTeX для формул, если нужно (например, $\\int e^x$).
     `;
 
-    this.chatSession = this.ai.chats.create({
-      model: 'gemini-2.5-flash',
-      config: {
-        systemInstruction: systemInstruction,
-        temperature: 0.9, // High creativity for better humor
-        topK: 40,
-      },
-      history: history.map(h => ({
-        role: h.role,
-        parts: h.parts
-      })),
-    });
+    try {
+      this.chatSession = this.ai.chats.create({
+        model: 'gemini-2.5-flash',
+        config: {
+          systemInstruction: systemInstruction,
+          temperature: 0.9,
+          topK: 40,
+        },
+        history: history.map(h => ({
+          role: h.role,
+          parts: h.parts
+        })),
+      });
+    } catch (e) {
+      console.error("Failed to create chat session:", e);
+      this.isDemoMode = true;
+    }
   }
 
   public async sendMessageStream(message: string): Promise<AsyncIterable<string>> {
-    if (!this.chatSession) {
-      await this.startChat();
-    }
-
-    if (!this.chatSession) {
-      throw new Error("Failed to initialize chat session");
+    // FALLBACK FOR DEMO MODE
+    if (this.isDemoMode || !this.chatSession) {
+      const randomResponse = MOCK_RESPONSES[Math.floor(Math.random() * MOCK_RESPONSES.length)];
+      
+      // Simulate streaming delay
+      return {
+        async *[Symbol.asyncIterator]() {
+          const chunks = randomResponse.split(" ");
+          for (const chunk of chunks) {
+            await new Promise(resolve => setTimeout(resolve, 100)); // slight delay
+            yield chunk + " ";
+          }
+        }
+      };
     }
 
     try {
       const responseStream = await this.chatSession.sendMessageStream({ message });
       
-      // We return an async iterable generator that yields text chunks
       return {
         async *[Symbol.asyncIterator]() {
           for await (const chunk of responseStream) {
@@ -78,7 +130,13 @@ class GeminiService {
       };
     } catch (error) {
       console.error("Gemini API Error:", error);
-      throw error;
+      // Fallback to demo mode on error
+      const errorResponse = "API Ewwol: Мой мозг пелеглeлся (или ты забыл заплатить за интеленет).";
+       return {
+        async *[Symbol.asyncIterator]() {
+            yield errorResponse;
+        }
+      };
     }
   }
 }

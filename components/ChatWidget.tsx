@@ -50,8 +50,14 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ mode }) => {
         });
       }
 
-    } catch (err) {
-      setMessages(prev => [...prev, { role: 'model', text: "Ошибочка: Переполнение стека в моем модуле эмоций.", isError: true }]);
+    } catch (err: any) {
+      console.error(err);
+      const errorMessage = err?.message || "Неизвестная ошибка";
+      setMessages(prev => [...prev, { 
+          role: 'model', 
+          text: `Ошибочка: Пелеполнение стека в моем модуле эмоций.\n\n[СИСТЕМНОЕ СООБЩЕНИЕ: ${errorMessage}]`, 
+          isError: true 
+      }]);
     } finally {
       setIsLoading(false);
     }
